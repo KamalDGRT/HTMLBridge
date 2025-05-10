@@ -1,0 +1,5 @@
+//
+// HTMLTextViewModel.swift
+// HTMLBridge
+//
+
