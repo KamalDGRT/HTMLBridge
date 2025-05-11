@@ -20,8 +20,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "HTMLBridge",
-            path: "Sources/HTMLBridge" // Source files directory
+            name: "HTMLBridge"
         )
     ]
 )
