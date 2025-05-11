@@ -11,48 +11,17 @@ public enum HtmlContentType: Equatable {
 }
 
 public struct HtmlText: UIViewRepresentable {
-    let stringType: HtmlContentType
+    public let stringType: HtmlContentType
     private var linkTapAction: ((URL) -> Void)?
     @ObservedObject private var viewModel: HTMLTextViewModel
     
-    init(
+    public init(
         _ stringType: HtmlContentType,
         customTapAction: ((URL) -> Void)? = nil
     ) {
         self.stringType = stringType
         self.linkTapAction = customTapAction
         self.viewModel = HTMLTextViewModel()
-    }
-    
-    public func updateUIView(_ uiTextView: UITextView, context: UIViewRepresentableContext<Self>) {
-        switch stringType {
-        case .attributedString(let attributedString):
-            viewModel.attributedContent = attributedString
-        case .string(let string):
-            viewModel.content = string
-            viewModel.attributedContent = viewModel.nsAttributedString
-        }
-        DispatchQueue.main.async {
-            uiTextView.attributedText = viewModel.attributedContent
-        }
-    }
-
-    public func sizeThatFits(
-        _ proposal: ProposedViewSize,
-        uiView uiTextView: UITextView,
-        context: Context
-    ) -> CGSize? {
-        if let width = proposal.width {
-            let proposedSize = CGSize(width: width, height: .infinity)
-            let fittingSize = uiTextView.systemLayoutSizeFitting(
-                proposedSize,
-                withHorizontalFittingPriority: .required,
-                verticalFittingPriority: .fittingSizeLevel
-            )
-            return CGSize(width: proposedSize.width, height: fittingSize.height)
-        } else {
-            return nil
-        }
     }
     
     public func makeUIView(context: UIViewRepresentableContext<Self>) -> UITextView {
@@ -83,19 +52,47 @@ public struct HtmlText: UIViewRepresentable {
         return uiTextView
     }
     
-    final public class Coordinator : NSObject, UITextViewDelegate {
+    public func updateUIView(
+        _ uiTextView: UITextView,
+        context: UIViewRepresentableContext<Self>
+    ) {
+        DispatchQueue.main.async {
+            switch stringType {
+            case .attributedString(let attributedString):
+                uiTextView.attributedText = attributedString
+            case .string(let string):
+                viewModel.content = string
+                uiTextView.attributedText = viewModel.nsAttributedString
+            }
+        }
+    }
+    
+    public func sizeThatFits(
+        _ proposal: ProposedViewSize,
+        uiView uiTextView: UITextView,
+        context: Context
+    ) -> CGSize? {
+        if let width = proposal.width {
+            let proposedSize = CGSize(width: width, height: .infinity)
+            let fittingSize = uiTextView.systemLayoutSizeFitting(
+                proposedSize,
+                withHorizontalFittingPriority: .required,
+                verticalFittingPriority: .fittingSizeLevel
+            )
+            return CGSize(width: proposedSize.width, height: fittingSize.height)
+        } else {
+            return nil
+        }
+    }
+    
+    final public class Coordinator: NSObject, UITextViewDelegate {
         var parent: HtmlText
         
         init(parent: HtmlText) {
             self.parent = parent
         }
         
-        public func textView(
-            _ textView: UITextView,
-            shouldInteractWith URL: URL,
-            in characterRange: NSRange,
-            interaction: UITextItemInteraction
-        ) -> Bool {
+        func handleLinkTapAction(_ URL: URL) {
             if let linkTapAction = parent.linkTapAction {
                 linkTapAction(URL)
             } else {
@@ -103,7 +100,29 @@ public struct HtmlText: UIViewRepresentable {
                     UIApplication.shared.open(URL, options: [:], completionHandler: nil)
                 }
             }
-            return false
+        }
+        
+        public func textView(
+            _ textView: UITextView,
+            primaryActionFor textItem: UITextItem,
+            defaultAction: UIAction
+        ) -> UIAction? {
+            if case .link(let url) = textItem.content {
+                print(url)
+                handleLinkTapAction(url)
+            }
+            return nil
+        }
+        
+        public func textView(
+            _ textView: UITextView,
+            menuConfigurationFor textItem: UITextItem,
+            defaultMenu: UIMenu
+        ) -> UITextItem.MenuConfiguration? {
+            if case .link(_) = textItem.content {
+                return nil // prevent menu
+            }
+            return .init(menu: defaultMenu) // show default menu
         }
     }
     
@@ -121,7 +140,6 @@ public extension HtmlText {
         viewModel.fontName = name
         viewModel.fontSize = size
         viewModel.fontColor = color
-        // TODO: change link text ;)
         return self
     }
     

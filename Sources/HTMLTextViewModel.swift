@@ -8,7 +8,6 @@ import SwiftUI
 final class HTMLTextViewModel: ObservableObject {
     // Content
     var content: String
-    var attributedContent: NSAttributedString?
     
     var fontName: String
     var fontSize: CGFloat
@@ -33,7 +32,6 @@ final class HTMLTextViewModel: ObservableObject {
     
     init() {
         content = ""
-        attributedContent = nil
         
         fontName = ""
         fontSize = 12
