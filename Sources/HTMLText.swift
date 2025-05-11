@@ -129,7 +129,6 @@ public struct HtmlText: UIViewRepresentable {
             defaultAction: UIAction
         ) -> UIAction? {
             if case .link(let url) = textItem.content {
-                print(url)
                 handleLinkTapAction(url)
             }
             return nil
@@ -155,6 +154,15 @@ public struct HtmlText: UIViewRepresentable {
 }
 
 public extension HtmlText {
+    /// Sets a custom action to handle link taps.
+    /// - Parameter action: A closure that takes a `URL` as its parameter.
+    /// - Returns: The modified `HtmlText` instance.
+    func onLinkTap(_ action: @escaping (URL) -> Void) -> Self {
+        var copy = self
+        copy.linkTapAction = action
+        return copy
+    }
+    
     /// Sets the font properties for the HTML text.
     func font(
         name: String,
